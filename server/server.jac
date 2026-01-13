@@ -2,10 +2,24 @@ import sys;
 import os;
 import json;
 import requests;
+import base64;
 import from byllm.lib {Model}
 import from dotenv {load_dotenv}
 import from database {get_database}
 import from rag_engine {RagEngine, load_config}
+import from claim_intake {
+    upload_to_s3,
+    download_from_s3,
+    extract_pdf_text_from_bytes,
+    analyze_claim_document,
+    classify_document,
+    identify_missing_items,
+    generate_followup_email,
+    calculate_completeness_score,
+    generate_next_steps,
+    ClaimSession
+}
+import from datetime {datetime}
 
 with entry {
     load_dotenv(override=True);
@@ -56,9 +70,9 @@ walker infer {
     can init_router with `root entry {
         visit [-->](`?Router) else {
             router_node = here ++> Router();
-            router_node ++> RagChat();
-            router_node ++> QAChat();
-            router_node ++> OffTopicChat();
+            router_node ++> RagChat(chat_type=ChatType.RAG);
+            router_node ++> QAChat(chat_type=ChatType.QA);
+            router_node ++> OffTopicChat(chat_type=ChatType.OFF_TOPIC);
             visit router_node;
         }
     }
@@ -80,7 +94,11 @@ walker infer {
 """
 def search_docs(query: str) -> str {
     results = rag_engine.search(query=query);
-    return results;
+    if results {
+        return str(results);
+    } else {
+        return "";
+    }
 }
 
 """Refer `full_language.md` for complete Jac language examples to understand jac syntaxes."""
@@ -98,8 +116,7 @@ def refer_full_language_examples() -> str {
         } else {
             return "Language documentation is empty";
         }
-        
-    } except Exception {
+    } except Exception as e {
         return "Language documentation not available";
     }
 }
@@ -505,6 +522,279 @@ walker get_doc_content {
                 "url": self.url
             };
         }
+    }
+}
+
+# GAP Claim Intake Walkers
+walker upload_claim_documents {
+    has session_id: str;
+    has files: list[dict] = [];  # List of {filename: str, content_base64: str}
+    has s3_keys: list[str] = [];
+
+    obj __specs__ {
+        static has methods: list = ["post"];
+        static has auth: bool = False;
+    }
+
+    can init_session with `root entry {
+        # Create or get session node
+        if not self.session_id {
+            self.session_id = f"claim_{datetime.now().strftime('%Y%m%d_%H%M%S')}";
+        }
+        
+        visit [-->](`?ClaimSession)(?session_id == self.session_id) else {
+            session_node = here ++> ClaimSession(
+                session_id=self.session_id,
+                created_at=datetime.now().isoformat()
+            );
+            visit session_node;
+        }
+    }
+
+    can upload_to_s3_files with ClaimSession entry {
+        # Upload each file to S3
+        for file_data in self.files {
+            filename = file_data.get("filename", "unknown.pdf");
+            content_base64 = file_data.get("content_base64", "");
+            
+            # Decode base64 to bytes
+            try {
+                content_bytes = base64.b64decode(content_base64);
+            } except Exception as e {
+                print(f"Error decoding base64 for {filename}: {e}");
+                continue;
+            }
+            
+            # Create S3 key
+            s3_key = f"{self.session_id}/{filename}";
+            
+            # Upload to S3
+            s3_url = upload_to_s3(content_bytes, s3_key);
+            
+            if s3_url {
+                self.s3_keys.append(s3_key);
+                here.s3_keys.append(s3_key);
+                here.filenames.append(filename);
+                print(f"Uploaded {filename} to S3: {s3_url}");
+            }
+        }
+        
+        here.status = "uploaded";
+        
+        report {
+            "status": "success",
+            "session_id": self.session_id,
+            "file_count": len(self.s3_keys),
+            "files": here.filenames
+        };
+    }
+}
+
+walker process_claim_documents {
+    has session_id: str;
+
+    obj __specs__ {
+        static has methods: list = ["post"];
+        static has auth: bool = False;
+    }
+
+    can find_session with `root entry {
+        visit [-->](`?ClaimSession)(?session_id == self.session_id) else {
+            report {"error": "Session not found"};
+            disengage;
+        }
+    }
+
+    can process_documents with ClaimSession entry {
+        print("Starting document analysis...");
+        
+        if not here.s3_keys {
+            report {"error": "No files found for this session"};
+            disengage;
+        }
+        
+        all_documents = [];
+        extracted_data = {
+            "lienholder": None,
+            "payoffAmount": None,
+            "settlementAmount": None,
+            "vin": None,
+            "policyNumber": None,
+            "claimantName": None,
+            "dates": [],
+            "vehicleInfo": None,
+            "claimNumber": None
+        };
+        
+        # Process each file from S3
+        for (idx, s3_key) in enumerate(here.s3_keys) {
+            if idx < len(here.filenames) {
+                filename = here.filenames[idx];
+            } else {
+                filename = "unknown.pdf";
+            }
+            
+            print(f"Processing {filename}... ({idx + 1}/{len(here.s3_keys)})");
+            
+            # Download from S3
+            pdf_bytes = download_from_s3(s3_key);
+            
+            if pdf_bytes {
+                # Extract text
+                print(f"Extracting text from {filename}...");
+                document_text = extract_pdf_text_from_bytes(pdf_bytes);
+                
+                if document_text {
+                    # Classify document type
+                    print(f"Classifying document type...");
+                    doc_type = classify_document(document_text);
+                    
+                    # Analyze and extract fields
+                    print(f"Analyzing {doc_type}...");
+                    doc_analysis = analyze_claim_document(document_text, doc_type);
+                    
+                    # Parse JSON response
+                    try {
+                        if isinstance(doc_analysis, str) {
+                            analysis_data = json.loads(doc_analysis);
+                        } else {
+                            analysis_data = doc_analysis;
+                        }
+                        
+                        # Merge extracted data
+                        for key in analysis_data {
+                            value = analysis_data[key];
+                            if value and key in extracted_data {
+                                if key == "dates" and isinstance(value, list) {
+                                    extracted_data[key].extend(value);
+                                } elif not extracted_data[key] {
+                                    extracted_data[key] = value;
+                                }
+                            }
+                        }
+                        
+                        all_documents.append({
+                            "filename": filename,
+                            "type": doc_type,
+                            "extracted_data": analysis_data
+                        });
+                    } except Exception as e {
+                        print(f"Error parsing analysis: {e}");
+                        all_documents.append({
+                            "filename": filename,
+                            "type": doc_type,
+                            "extracted_data": {}
+                        });
+                    }
+                }
+            }
+        }
+        
+        # Identify missing items
+        print("Checking for missing documentation...");
+        all_documents_json = json.dumps(all_documents, indent=2);
+        missing_items_str = identify_missing_items(all_documents_json);
+        try {
+            if isinstance(missing_items_str, str) {
+                missing_items = json.loads(missing_items_str);
+            } else {
+                missing_items = missing_items_str;
+            }
+            if not isinstance(missing_items, list) {
+                missing_items = [str(missing_items)];
+            }
+        } except Exception {
+            if missing_items_str {
+                missing_items = [str(missing_items_str)];
+            } else {
+                missing_items = [];
+            }
+        }
+        
+        # Calculate completeness
+        print("Calculating completeness score...");
+        completeness_score = calculate_completeness_score(extracted_data, missing_items);
+        
+        # Generate next steps
+        print("Generating recommended next steps...");
+        next_steps_str = generate_next_steps(missing_items, completeness_score);
+        try {
+            if isinstance(next_steps_str, str) {
+                next_steps = json.loads(next_steps_str);
+            } else {
+                next_steps = next_steps_str;
+            }
+            if not isinstance(next_steps, list) {
+                next_steps = [str(next_steps)];
+            }
+        } except Exception {
+            if next_steps_str {
+                next_steps = [str(next_steps_str)];
+            } else {
+                next_steps = [];
+            }
+        }
+        
+        # Generate follow-up email if there are missing items
+        followup_email = None;
+        if missing_items {
+            print("Generating follow-up email template...");
+            extracted_fields_json = json.dumps(extracted_data, indent=2);
+            followup_email = generate_followup_email(
+                extracted_data.get("claimantName", ""),
+                missing_items,
+                extracted_fields_json
+            );
+        }
+        
+        # Create final assessment
+        assessment = {
+            "extractedFields": extracted_data,
+            "missingItems": missing_items,
+            "completenessScore": completeness_score,
+            "nextSteps": next_steps,
+            "followUpEmail": followup_email,
+            "documentsAnalyzed": all_documents,
+            "processedAt": datetime.now().isoformat()
+        };
+        
+        # Save assessment to session
+        here.assessment = assessment;
+        here.status = "completed";
+        
+        print("Assessment complete!");
+        
+        report {
+            "status": "success",
+            "assessment": assessment,
+            "session_id": self.session_id
+        };
+    }
+}
+
+walker get_claim_assessment {
+    has session_id: str;
+
+    obj __specs__ {
+        static has methods: list = ["get"];
+        static has auth: bool = False;
+    }
+
+    can retrieve_assessment with `root entry {
+        visit [-->](`?ClaimSession)(?session_id == self.session_id) else {
+            report {"error": "Session not found"};
+            disengage;
+        }
+    }
+
+    can return_data with ClaimSession entry {
+        report {
+            "session_id": here.session_id,
+            "status": here.status,
+            "assessment": here.assessment,
+            "files": here.filenames,
+            "created_at": here.created_at
+        };
     }
 }
 

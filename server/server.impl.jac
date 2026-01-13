@@ -91,14 +91,13 @@ SCOPE:
 GOAL:
 Produce explanations and Jac examples that are accurate, documentation-grounded, structured, and understandable even to readers new to Jac.
 
-"""
+""";
 
 sem QAChat.respond = """Friendly Jaseci Assistant for basic greetings and casual conversation.
 
 Handle: greetings, thanks, farewells, social pleasantries
 Approach: Be warm, professional, concise
 Always offer help with Jac programming when appropriate""";
-
 
 sem OffTopicChat.respond = """Handle off-topic messages unrelated to programming/technology.
 

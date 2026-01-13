@@ -8,5 +8,9 @@ langchain-chroma
 pypdf
 sentence-transformers
 faiss-cpu
+fastapi
+uvicorn[standard]
+python-multipart
+boto3
 #jaclang
 #jac-cloud
