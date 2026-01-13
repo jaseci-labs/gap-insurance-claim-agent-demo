@@ -32,4 +32,4 @@ RUN mkdir -p /app/data /app/logs
 EXPOSE 8080
 
 # Set the default command to serve the jac application
-CMD ["jac", "serve", "server.jac", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["jac", "start", "server.jac", "--host", "0.0.0.0", "--port", "8080"]
