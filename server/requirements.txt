@@ -12,5 +12,5 @@ fastapi
 uvicorn[standard]
 python-multipart
 boto3
-#jaclang
+jaclang
 #jac-cloud
