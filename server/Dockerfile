@@ -7,6 +7,8 @@ WORKDIR /app
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV HOST=0.0.0.0
+ENV PORT=8080
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -32,4 +34,4 @@ RUN mkdir -p /app/data /app/logs
 EXPOSE 8080
 
 # Set the default command to serve the jac application
-CMD ["jac", "start", "server.jac", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["jac", "start", "server.jac"]
