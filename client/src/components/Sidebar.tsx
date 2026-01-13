@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-// Logo path updated to use public folder
-const jacLogo = "/logo.png";
+// Ally logo path
+const allyLogo = "/logo.png";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -55,41 +55,41 @@ const Sidebar = ({ isOpen, onToggle, onNewChat }: SidebarProps) => {
       
       {/* Sidebar */}
       <div className={`
-        fixed left-0 top-0 h-full bg-gray-900 border-r border-gray-700 z-50 transition-all duration-300
+        fixed left-0 top-0 h-full bg-card border-r border-border z-50 transition-all duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         ${isExpanded ? 'w-70' : 'w-16'} lg:translate-x-0 lg:static lg:z-auto
       `}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-4 border-b border-gray-700">
+          <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between">
               <div className={`flex items-center gap-3 transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity blur"></div>
-                  <img 
-                    src={jacLogo} 
-                    alt="Jaseci Logo" 
+                  <div className="absolute -inset-1 bg-primary/10 rounded-lg opacity-50 group-hover:opacity-70 transition-opacity"></div>
+                  <img
+                    src={allyLogo}
+                    alt="Ally"
                     className="relative w-10 h-10 object-contain"
                   />
                 </div>
                 {isExpanded && (
                   <div>
-                    <h1 className="text-lg font-bold text-white">
-                      Jac GPT
+                    <h1 className="text-lg font-bold text-primary">
+                      Ally GAP
                     </h1>
-                    <p className="text-xs text-gray-400">
-                      Jac programming companion
+                    <p className="text-xs text-muted-foreground">
+                      Claims Processing Agent
                     </p>
                   </div>
                 )}
               </div>
-              
+
               {!isExpanded && (
                 <div className="relative group mx-auto">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity blur"></div>
-                  <img 
-                    src={jacLogo} 
-                    alt="Jaseci Logo" 
+                  <div className="absolute -inset-1 bg-primary/10 rounded-lg opacity-50 group-hover:opacity-70 transition-opacity"></div>
+                  <img
+                    src={allyLogo}
+                    alt="Ally"
                     className="relative w-8 h-8 object-contain"
                   />
                 </div>
@@ -101,17 +101,17 @@ const Sidebar = ({ isOpen, onToggle, onNewChat }: SidebarProps) => {
                   variant="ghost"
                   size="sm"
                   onClick={toggleExpanded}
-                  className="hidden lg:flex text-gray-400 hover:text-white"
+                  className="hidden lg:flex text-muted-foreground hover:text-primary"
                 >
                   {isExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </Button>
-                
+
                 {/* Close button - only on mobile */}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={onToggle}
-                  className="lg:hidden text-gray-400 hover:text-white"
+                  className="lg:hidden text-muted-foreground hover:text-primary"
                 >
                   <X className="w-5 h-5" />
                 </Button>
@@ -119,49 +119,48 @@ const Sidebar = ({ isOpen, onToggle, onNewChat }: SidebarProps) => {
             </div>
           </div>
 
-          {/* New Chat Button */}
+          {/* New Claim Button */}
           <div className="p-4">
-            <Button 
+            <Button
               onClick={onNewChat}
-              className={`w-full justify-start gap-3 bg-gray-800 hover:bg-gray-700 text-white border-gray-600 ${!isExpanded ? 'px-2' : ''}`}
-              variant="outline"
-              title="New Chat"
+              className={`w-full justify-start gap-3 bg-primary hover:bg-primary/90 text-primary-foreground ${!isExpanded ? 'px-2' : ''}`}
+              title="New Claim"
             >
               <Plus className="w-4 h-4 shrink-0" />
-              {isExpanded && "New Chat"}
+              {isExpanded && "New Claim"}
             </Button>
           </div>
 
-          {/* Chat History */}
+          {/* Claim History */}
           {isExpanded && (
             <div className="flex-1 overflow-y-auto px-4">
               <div className="space-y-2">
-                <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">
-                  Recent Chats
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                  Recent Claims
                 </div>
-                
-                {/* Current chat - active */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800 text-white cursor-pointer">
-                  <MessageSquare className="w-4 h-4 text-orange-500" />
-                  <span className="text-sm truncate">Jac Code Generation</span>
+
+                {/* Current claim - active */}
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-accent text-foreground cursor-pointer hover:bg-accent/80">
+                  <MessageSquare className="w-4 h-4 text-primary" />
+                  <span className="text-sm truncate">Current Session</span>
                 </div>
               </div>
             </div>
           )}
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-700 space-y-2">
+          <div className="p-4 border-t border-border space-y-2">
             {/* Authenticated User Profile */}
             {isExpanded && isAuthenticated && user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start gap-3 text-gray-300 hover:text-white hover:bg-gray-800 p-3"
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3 text-foreground hover:text-primary hover:bg-accent p-3"
                   >
                     <Avatar className="w-6 h-6">
                       <AvatarImage src="" />
-                      <AvatarFallback className="text-xs bg-orange-500 text-white">
+                      <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                         {getUserInitials(user.name, user.email)}
                       </AvatarFallback>
                     </Avatar>
@@ -170,7 +169,7 @@ const Sidebar = ({ isOpen, onToggle, onNewChat }: SidebarProps) => {
                         {user.name || user.email}
                       </span>
                       {user.name && (
-                        <span className="text-xs text-gray-400 truncate">
+                        <span className="text-xs text-muted-foreground truncate">
                           {user.email}
                         </span>
                       )}
@@ -199,38 +198,33 @@ const Sidebar = ({ isOpen, onToggle, onNewChat }: SidebarProps) => {
 
             {/* Guest User Actions */}
             {isExpanded && !isAuthenticated && (
-              <div className="space-y-4">
-                <div className="text-xs text-gray-400 bg-gray-800/50 px-3 py-2 rounded-lg">
-                  Free messages: {messageCount}/{maxFreeMessages}
-                </div>
+              <div className="space-y-3">
                 <Link to="/register">
-                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Sign Up
                   </Button>
                 </Link>
-                <div className="pt-2">
-                  <Link to="/login">
-                    <Button variant="outline" className="w-full text-orange-500 border-orange-500 hover:bg-orange-500 hover:text-white">
-                      <LogIn className="w-4 h-4 mr-2" />
-                      Sign In
-                    </Button>
-                  </Link>
-                </div>
+                <Link to="/login">
+                  <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign In
+                  </Button>
+                </Link>
               </div>
             )}
             
             {!isExpanded && isAuthenticated && user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full px-2 py-2 text-gray-300 hover:text-white hover:bg-gray-800"
+                  <Button
+                    variant="ghost"
+                    className="w-full px-2 py-2 text-foreground hover:text-primary hover:bg-accent"
                     title={user.name || user.email}
                   >
                     <Avatar className="w-6 h-6">
                       <AvatarImage src="" />
-                      <AvatarFallback className="text-xs bg-orange-500 text-white">
+                      <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                         {getUserInitials(user.name, user.email)}
                       </AvatarFallback>
                     </Avatar>
@@ -241,7 +235,7 @@ const Sidebar = ({ isOpen, onToggle, onNewChat }: SidebarProps) => {
                     <div className="flex flex-col">
                       <span>{user.name || user.email}</span>
                       {user.name && (
-                        <span className="text-xs text-gray-400 font-normal">
+                        <span className="text-xs text-muted-foreground font-normal">
                           {user.email}
                         </span>
                       )}
@@ -268,18 +262,18 @@ const Sidebar = ({ isOpen, onToggle, onNewChat }: SidebarProps) => {
             {!isExpanded && !isAuthenticated && (
               <div className="space-y-2">
                 <Link to="/register">
-                  <Button 
-                    variant="ghost" 
-                    className="w-full px-2 py-2 text-orange-500 hover:text-white hover:bg-orange-600"
+                  <Button
+                    variant="ghost"
+                    className="w-full px-2 py-2 text-primary hover:text-primary-foreground hover:bg-primary"
                     title="Sign Up"
                   >
                     <UserPlus className="w-4 h-4" />
                   </Button>
                 </Link>
                 <Link to="/login">
-                  <Button 
-                    variant="ghost" 
-                    className="w-full px-2 py-2 text-gray-400 hover:text-white hover:bg-gray-800"
+                  <Button
+                    variant="ghost"
+                    className="w-full px-2 py-2 text-muted-foreground hover:text-primary hover:bg-accent"
                     title="Sign In"
                   >
                     <LogIn className="w-4 h-4" />
@@ -288,22 +282,22 @@ const Sidebar = ({ isOpen, onToggle, onNewChat }: SidebarProps) => {
               </div>
             )}
 
-            <Button 
-              variant="ghost" 
-              className={`w-full justify-start gap-3 text-gray-400 hover:text-white hover:bg-gray-800 ${!isExpanded ? 'px-2' : ''}`}
+            <Button
+              variant="ghost"
+              className={`w-full justify-start gap-3 text-muted-foreground hover:text-primary hover:bg-accent ${!isExpanded ? 'px-2' : ''}`}
               size="sm"
               title="Help & FAQ"
-              onClick={() => window.open('https://www.jac-lang.org/learn/data_spatial/FAQ/', '_blank')}
+              onClick={() => window.open('https://www.ally.com/auto/vehicle-protection/claims-support/', '_blank')}
             >
               <HelpCircle className="w-4 h-4 shrink-0" />
               {isExpanded && "Help & FAQ"}
             </Button>
-            
+
             {/* Status indicator */}
             {isExpanded && (
-              <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-800/50 px-3 py-2 rounded-lg mt-3">
-                <div className={`w-2 h-2 rounded-full animate-pulse ${isAuthenticated ? 'bg-green-500' : 'bg-orange-500'}`}></div>
-                {isAuthenticated ? 'Ready to help' : 'Guest mode'}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-accent px-3 py-2 rounded-lg mt-3">
+                <div className={`w-2 h-2 rounded-full animate-pulse ${isAuthenticated ? 'bg-green-500' : 'bg-primary'}`}></div>
+                {isAuthenticated ? 'Ready to process' : 'Guest mode'}
               </div>
             )}
           </div>

@@ -2,56 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Jac Language Chatbot Design System - Dark theme with orange/red accents */
+/* Ally GAP Insurance Claims Agent - Professional purple/white theme */
 
 @layer base {
   :root {
-    /* Core dark theme colors */
-    --background: 220 13% 6%;
-    --foreground: 220 13% 95%;
+    /* Core light theme colors - Ally white backgrounds */
+    --background: 0 0% 100%;
+    --foreground: 280 10% 20%;
 
-    --card: 220 13% 8%;
-    --card-foreground: 220 13% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 280 10% 20%;
 
-    --popover: 220 13% 8%;
-    --popover-foreground: 220 13% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 280 10% 20%;
 
-    /* Jac orange/red brand colors */
-    --primary: 14 100% 60%;
-    --primary-foreground: 220 13% 95%;
-    --primary-glow: 14 100% 65%;
+    /* Ally signature purple brand colors - #4A154B and variations */
+    --primary: 292 55% 19%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 292 55% 25%;
 
-    --secondary: 220 13% 12%;
-    --secondary-foreground: 220 13% 85%;
+    --secondary: 292 20% 95%;
+    --secondary-foreground: 292 55% 19%;
 
-    --muted: 220 13% 10%;
-    --muted-foreground: 220 13% 65%;
+    --muted: 292 15% 96%;
+    --muted-foreground: 280 10% 45%;
 
-    --accent: 220 13% 14%;
-    --accent-foreground: 220 13% 85%;
+    --accent: 292 30% 92%;
+    --accent-foreground: 292 55% 19%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 220 13% 95%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 18%;
-    --input: 220 13% 12%;
-    --ring: 14 100% 60%;
+    --border: 292 15% 88%;
+    --input: 292 15% 96%;
+    --ring: 292 55% 19%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Chat specific colors */
-    --chat-user-bg: 14 100% 60%;
-    --chat-assistant-bg: 220 13% 12%;
-    --chat-code-bg: 220 13% 4%;
-    
+    --chat-user-bg: 292 55% 19%;
+    --chat-assistant-bg: 292 15% 96%;
+    --chat-code-bg: 0 0% 98%;
+
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(14 100% 60%), hsl(14 100% 55%));
-    --gradient-subtle: linear-gradient(180deg, hsl(220 13% 8%), hsl(220 13% 6%));
-    
+    --gradient-primary: linear-gradient(135deg, hsl(292 55% 19%), hsl(292 55% 25%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(292 15% 98%));
+
     /* Shadows and effects */
-    --shadow-glow: 0 0 20px hsl(14 100% 60% / 0.3);
-    --shadow-card: 0 8px 32px hsl(220 13% 2% / 0.5);
-    
+    --shadow-glow: 0 0 20px hsl(292 55% 19% / 0.15);
+    --shadow-card: 0 2px 8px hsl(292 20% 20% / 0.08);
+
     /* Animation variables */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);

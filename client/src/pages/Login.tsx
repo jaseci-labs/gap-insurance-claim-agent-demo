@@ -31,15 +31,15 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-      <Card className="w-full max-w-md bg-gray-800 border-gray-700">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-md bg-card border-border">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <img src="/logo.png" alt="JAC GPT" className="h-12 w-12" />
+            <img src="/logo.png" alt="Ally" className="h-12 w-12" />
           </div>
-          <CardTitle className="text-2xl text-center text-white">Welcome to Jaseci !!!</CardTitle>
-          <CardDescription className="text-center text-gray-400">
-            Sign in to your account to continue
+          <CardTitle className="text-2xl text-center text-primary">Ally GAP Claims Agent</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Sign in to access the claims processing system
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -50,7 +50,7 @@ const Login = () => {
               </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-300">Email</Label>
+              <Label htmlFor="email" className="text-foreground">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -59,11 +59,11 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
-                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                className="bg-input border-border text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-300">Password</Label>
+              <Label htmlFor="password" className="text-foreground">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -72,14 +72,14 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                className="bg-input border-border text-foreground"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button 
-              type="submit" 
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white" 
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -92,18 +92,18 @@ const Login = () => {
               )}
             </Button>
             <div className="text-center text-sm">
-              <span className="text-gray-400">Don't have an account? </span>
-              <Link 
-                to="/register" 
-                className="text-orange-500 hover:text-orange-400 hover:underline font-medium"
+              <span className="text-muted-foreground">Don't have an account? </span>
+              <Link
+                to="/register"
+                className="text-primary hover:text-primary/80 hover:underline font-medium"
               >
                 Sign up
               </Link>
             </div>
             <div className="text-center">
-              <Link 
-                to="/forgot-password" 
-                className="text-sm text-gray-400 hover:text-gray-300 hover:underline"
+              <Link
+                to="/forgot-password"
+                className="text-sm text-muted-foreground hover:text-foreground hover:underline"
               >
                 Forgot your password?
               </Link>

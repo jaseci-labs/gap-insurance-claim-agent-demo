@@ -5,14 +5,10 @@ import MobileMenuButton from './MobileMenuButton';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import LimitReachedModal from './LimitReachedModal';
-import DocumentationPanel from './DocumentationPanel';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
 import { jacServerService, ChatMessage as JacChatMessage } from '@/services/jacServer';
-import { documentationService, DocumentationSuggestion } from '@/services/documentation';
-import { Book, X } from 'lucide-react';
-// Logo path updated to use public folder
-const jacLogo = "/logo.png";
+// Ally logo path
+const allyLogo = "/logo.png";
 
 interface Message {
   id: string;
@@ -28,9 +24,6 @@ const JacChatbot = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
   const [showLimitModal, setShowLimitModal] = useState(false);
-  const [docPanelOpen, setDocPanelOpen] = useState(false);
-  const [docSuggestions, setDocSuggestions] = useState<DocumentationSuggestion[]>([]);
-  const [lastUserMessage, setLastUserMessage] = useState<string>('');
 
   // Initialize session on component mount
   useEffect(() => {
@@ -82,9 +75,6 @@ const JacChatbot = () => {
       return;
     }
 
-    // Store the user message for documentation suggestions
-    setLastUserMessage(message);
-
     const userMessage: Message = {
       id: Date.now().toString(),
       content: message,
@@ -94,28 +84,6 @@ const JacChatbot = () => {
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-
-    // Get documentation suggestions based on the message
-    try {
-      console.log('Fetching suggestions for message:', message);
-      const suggestions = await documentationService.getSuggestions(message, messages.map(m => ({
-        role: m.isUser ? 'user' : 'assistant',
-        content: m.content
-      })));
-      console.log('Received suggestions:', suggestions);
-      setDocSuggestions(suggestions);
-      
-      // Auto-open documentation panel when user sends a message
-      if (!docPanelOpen) {
-        setDocPanelOpen(true);
-      }
-    } catch (error) {
-      console.warn('Failed to get documentation suggestions:', error);
-      // Still open the panel even if suggestions fail
-      if (!docPanelOpen) {
-        setDocPanelOpen(true);
-      }
-    }
 
     try {
       const userEmail = user?.email || '';
@@ -149,36 +117,26 @@ const JacChatbot = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-900">
+    <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
+      <Sidebar
+        isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         onNewChat={handleNewChat}
       />
-      
+
       {/* Chat Interface */}
-      <div className={`flex ${docPanelOpen ? 'w-1/2' : 'flex-1'} min-w-0`}>
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-screen">
           {/* Mobile Menu Button */}
           <MobileMenuButton onClick={() => setSidebarOpen(true)} />
 
-          {/* Header with Docs Toggle */}
-          <div className="hidden lg:flex items-center justify-between p-4 border-b border-gray-700">
+          {/* Header */}
+          <div className="hidden lg:flex items-center p-4 border-b border-border bg-card">
             <div className="flex items-center gap-3">
-              <img src={jacLogo} alt="Jac Logo" className="w-8 h-8 object-contain" />
-              <h1 className="text-xl font-semibold text-white">Jac GPT</h1>
+              <img src={allyLogo} alt="Ally" className="w-8 h-8 object-contain" />
+              <h1 className="text-xl font-semibold text-primary">Ally GAP Claims Agent</h1>
             </div>
-            
-            <Button
-              variant={docPanelOpen ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDocPanelOpen(!docPanelOpen)}
-              className="flex items-center gap-2"
-            >
-              {docPanelOpen ? <X className="w-4 h-4" /> : <Book className="w-4 h-4" />}
-              {docPanelOpen ? 'Hide Docs' : 'Show Docs'}
-            </Button>
           </div>
 
           {/* Limit Reached Modal */}
@@ -194,14 +152,37 @@ const JacChatbot = () => {
             <div className="max-w-4xl mx-auto space-y-1 lg:pt-0 pt-16 min-w-0 overflow-hidden">
               {messages.length === 0 && !isLoading && (
                 <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
-                      <img src={jacLogo} alt="Jac Logo" className="w-10 h-10 object-contain opacity-60" />
+                  <div className="text-center max-w-2xl mx-auto px-4">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-primary/10 rounded-full flex items-center justify-center">
+                      <img src={allyLogo} alt="Ally" className="w-12 h-12 object-contain" />
                     </div>
-                    <p className="text-xl text-gray-300 font-medium">Ask me anything about Jac</p>
-                    <p className="text-sm text-gray-500 mt-2">Start a conversation about Jac programming language</p>
-                    <p className="text-xs text-gray-600 mt-3">
-                      💡 Relevant documentation will appear when you ask a question
+                    <h2 className="text-2xl text-primary font-semibold mb-2">GAP Claim Intake Agent</h2>
+                    <p className="text-base text-muted-foreground mb-6">
+                      Upload your GAP claim documents for instant analysis and intake assessment
+                    </p>
+                    <div className="bg-accent/50 rounded-lg p-6 text-left">
+                      <h3 className="font-semibold text-primary mb-3">I can help you with:</h3>
+                      <ul className="space-y-2 text-sm text-foreground">
+                        <li className="flex items-start gap-2">
+                          <span className="text-primary mt-0.5">✓</span>
+                          <span>Extract key information from GAP contracts and insurance documents</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-primary mt-0.5">✓</span>
+                          <span>Identify missing documentation for complete claim intake</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-primary mt-0.5">✓</span>
+                          <span>Generate claim readiness assessments and next steps</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-primary mt-0.5">✓</span>
+                          <span>Draft follow-up emails for missing information</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-4">
+                      Start by uploading claim documents or asking a question about the GAP claim process
                     </p>
                   </div>
                 </div>
@@ -218,16 +199,16 @@ const JacChatbot = () => {
               
               {isLoading && (
                 <div className="flex gap-3 p-3 animate-fade-in">
-                  <div className="w-8 h-8 shrink-0 bg-gray-700 rounded-full animate-pulse flex items-center justify-center p-1.5">
-                    <img src={jacLogo} alt="Typing" className="w-full h-full object-contain opacity-60" />
+                  <div className="w-8 h-8 shrink-0 bg-primary/10 rounded-full animate-pulse flex items-center justify-center p-1.5">
+                    <img src={allyLogo} alt="Processing" className="w-full h-full object-contain" />
                   </div>
-                  <div className="bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="bg-card border border-border rounded-2xl px-4 py-3 shadow-sm">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">Jaseci is thinking...</div>
+                    <div className="text-xs text-muted-foreground mt-1">Analyzing claim documents...</div>
                   </div>
                 </div>
               )}
@@ -235,25 +216,17 @@ const JacChatbot = () => {
           </ScrollArea>
           
           {/* Chat Input */}
-          <ChatInput 
-            onSendMessage={handleSendMessage} 
-            disabled={isLoading || !canSendMessage} 
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            disabled={isLoading || !canSendMessage}
             placeholder={
-              !canSendMessage 
-                ? "Sign up to continue chatting..." 
-                : "Type your message..."
+              !canSendMessage
+                ? "Sign up to continue..."
+                : "Ask about GAP claims or upload documents..."
             }
           />
         </div>
       </div>
-
-      {/* Documentation Panel */}
-      <DocumentationPanel
-        message={lastUserMessage}
-        suggestions={docSuggestions}
-        isVisible={docPanelOpen}
-        onToggle={() => setDocPanelOpen(false)}
-      />
     </div>
   );
 };

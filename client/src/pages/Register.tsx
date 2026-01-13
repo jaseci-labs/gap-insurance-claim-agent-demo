@@ -131,15 +131,15 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-      <Card className="w-full max-w-md bg-gray-800 border-gray-700">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-md bg-card border-border">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <img src="/logo.png" alt="JAC GPT" className="h-12 w-12" />
+            <img src="/logo.png" alt="Ally" className="h-12 w-12" />
           </div>
-          <CardTitle className="text-2xl text-center text-white">Create an account</CardTitle>
-          <CardDescription className="text-center text-gray-400">
-            Enter your details to get started
+          <CardTitle className="text-2xl text-center text-primary">Create an account</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Enter your details to access the claims processing system
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -150,7 +150,7 @@ const Register = () => {
               </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-300">Full Name</Label>
+              <Label htmlFor="name" className="text-foreground">Full Name</Label>
               <Input
                 id="name"
                 name="name"
@@ -160,40 +160,40 @@ const Register = () => {
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                className="bg-input border-border text-foreground"
               />
             </div>
             
             {/* Location Information */}
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-orange-500" />
-                <Label className="text-gray-300">Location</Label>
+                <MapPin className="h-4 w-4 text-primary" />
+                <Label className="text-foreground">Location</Label>
               </div>
               {gettingLocation ? (
-                <div className="flex items-center space-x-2 text-sm text-gray-400">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   <span>Detecting location...</span>
                 </div>
               ) : location ? (
-                <div className="text-sm text-gray-400 bg-gray-700 p-2 rounded border border-gray-600">
+                <div className="text-sm text-muted-foreground bg-accent p-2 rounded border border-border">
                   <div className="flex items-center space-x-1">
                     <span>📍</span>
                     <span>{location.city && location.country ? `${location.city}, ${location.country}` : 'Location detected'}</span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-muted-foreground mt-1">
                     This helps us provide location-relevant features
                   </div>
                 </div>
               ) : locationError ? (
-                <div className="text-sm text-gray-500 bg-gray-700 p-2 rounded border border-gray-600">
+                <div className="text-sm text-muted-foreground bg-accent p-2 rounded border border-border">
                   <span>⚠️ {locationError}</span>
                 </div>
               ) : null}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-300">Email</Label>
+              <Label htmlFor="email" className="text-foreground">Email</Label>
               <Input
                 id="email"
                 name="email"
@@ -203,11 +203,11 @@ const Register = () => {
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                className="bg-input border-border text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-300">Password</Label>
+              <Label htmlFor="password" className="text-foreground">Password</Label>
               <Input
                 id="password"
                 name="password"
@@ -217,14 +217,14 @@ const Register = () => {
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                className="bg-input border-border text-foreground"
               />
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Password must be at least 6 characters long
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-gray-300">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-foreground">Confirm Password</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -234,14 +234,14 @@ const Register = () => {
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                className="bg-input border-border text-foreground"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button 
-              type="submit" 
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white" 
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -254,10 +254,10 @@ const Register = () => {
               )}
             </Button>
             <div className="text-center text-sm">
-              <span className="text-gray-400">Already have an account? </span>
-              <Link 
-                to="/login" 
-                className="text-orange-500 hover:text-orange-400 hover:underline font-medium"
+              <span className="text-muted-foreground">Already have an account? </span>
+              <Link
+                to="/login"
+                className="text-primary hover:text-primary/80 hover:underline font-medium"
               >
                 Sign in
               </Link>
