@@ -1,0 +1,12 @@
+python-dotenv
+requests
+byllm
+pymongo
+langchain-openai
+langchain-community
+langchain-chroma
+pypdf
+sentence-transformers
+faiss-cpu
+#jaclang
+#jac-cloud
