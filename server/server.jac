@@ -17,7 +17,9 @@ import from claim_intake {
     generate_followup_email,
     calculate_completeness_score,
     generate_next_steps,
-    ClaimSession
+    ClaimSession,
+    ExtractedFields,
+    DocumentType
 }
 import from datetime {datetime}
 
@@ -635,6 +637,12 @@ walker process_claim_documents {
             }
             
             print(f"Processing {filename}... ({idx + 1}/{len(here.s3_keys)})");
+            report {
+                "stage": "extract",
+                "status": "processing",
+                "filename": filename,
+                "message": "Extracting text and content from your document"
+            };
             
             # Download from S3
             pdf_bytes = download_from_s3(s3_key);
@@ -647,45 +655,61 @@ walker process_claim_documents {
                 if document_text {
                     # Classify document type
                     print(f"Classifying document type...");
-                    doc_type = classify_document(document_text);
+                    report {
+                        "stage": "identify",
+                        "status": "processing",
+                        "filename": filename,
+                        "message": "Identifying document type and analyzing structure"
+                    };
+                    
+                    doc_type_result = classify_document(document_text);
+                    doc_type = doc_type_result.category;
+                    print(f"✓ Document type: {doc_type} (confidence: {doc_type_result.confidence:.2f})");
                     
                     # Analyze and extract fields
                     print(f"Analyzing {doc_type}...");
-                    doc_analysis = analyze_claim_document(document_text, doc_type);
+                    report {
+                        "stage": "assess",
+                        "status": "processing",
+                        "filename": filename,
+                        "message": "Extracting key claim details and checking completeness"
+                    };
                     
-                    # Parse JSON response
-                    try {
-                        if isinstance(doc_analysis, str) {
-                            analysis_data = json.loads(doc_analysis);
-                        } else {
-                            analysis_data = doc_analysis;
-                        }
-                        
-                        # Merge extracted data
-                        for key in analysis_data {
-                            value = analysis_data[key];
-                            if value and key in extracted_data {
-                                if key == "dates" and isinstance(value, list) {
-                                    extracted_data[key].extend(value);
-                                } elif not extracted_data[key] {
-                                    extracted_data[key] = value;
-                                }
+                    # Call with structured output
+                    extracted_fields = analyze_claim_document(document_text[:3000], doc_type);
+                    
+                    print(f"✓ Extracted fields: {extracted_fields}");
+                    
+                    # Convert structured object to dict
+                    analysis_data = {
+                        "lienholder": extracted_fields.lienholder,
+                        "payoffAmount": extracted_fields.payoffAmount,
+                        "settlementAmount": extracted_fields.settlementAmount,
+                        "vin": extracted_fields.vin,
+                        "policyNumber": extracted_fields.policyNumber,
+                        "claimantName": extracted_fields.claimantName,
+                        "dates": extracted_fields.dates or [],
+                        "vehicleInfo": extracted_fields.vehicleInfo,
+                        "claimNumber": extracted_fields.claimNumber
+                    };
+                    
+                    # Merge extracted data
+                    for key in analysis_data {
+                        value = analysis_data[key];
+                        if value and key in extracted_data {
+                            if key == "dates" and isinstance(value, list) {
+                                extracted_data[key].extend(value);
+                            } elif not extracted_data[key] {
+                                extracted_data[key] = value;
                             }
                         }
-                        
-                        all_documents.append({
-                            "filename": filename,
-                            "type": doc_type,
-                            "extracted_data": analysis_data
-                        });
-                    } except Exception as e {
-                        print(f"Error parsing analysis: {e}");
-                        all_documents.append({
-                            "filename": filename,
-                            "type": doc_type,
-                            "extracted_data": {}
-                        });
                     }
+                    
+                    all_documents.append({
+                        "filename": filename,
+                        "type": doc_type,
+                        "extracted_data": analysis_data
+                    });
                 }
             }
         }
@@ -739,12 +763,19 @@ walker process_claim_documents {
         followup_email = None;
         if missing_items {
             print("Generating follow-up email template...");
+            report {
+                "stage": "draft",
+                "status": "processing",
+                "message": "Drafting personalized follow-up email for missing documents"
+            };
+            
             extracted_fields_json = json.dumps(extracted_data, indent=2);
             followup_email = generate_followup_email(
                 extracted_data.get("claimantName", ""),
                 missing_items,
                 extracted_fields_json
             );
+            print(f"✓ Follow-up email generated ({len(followup_email)} chars)");
         }
         
         # Create final assessment

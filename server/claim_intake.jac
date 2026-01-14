@@ -17,6 +17,38 @@ with entry {
 # Initialize LLM for document analysis
 glob llm = Model(model_name="gpt-4o");
 
+"""Structured output for extracted claim fields"""
+obj ExtractedFields {
+    has lienholder: str;
+    has payoffAmount: str;
+    has settlementAmount: str;
+    has vin: str;
+    has policyNumber: str;
+    has claimantName: str;
+    has dates: list[str];
+    has vehicleInfo: str;
+    has claimNumber: str;
+}
+
+sem ExtractedFields.lienholder = "Lienholder/Finance Company name, or null if not found";
+sem ExtractedFields.payoffAmount = "Payoff Amount as string (e.g., '$15,000'), or null if not found";
+sem ExtractedFields.settlementAmount = "Settlement Amount from insurance as string, or null if not found";
+sem ExtractedFields.vin = "Vehicle Identification Number (VIN), or null if not found";
+sem ExtractedFields.policyNumber = "Policy Number, or null if not found";
+sem ExtractedFields.claimantName = "Claimant Name, or null if not found";
+sem ExtractedFields.dates = "Important dates (claim date, incident date, etc.) as array of strings, empty array if none";
+sem ExtractedFields.vehicleInfo = "Vehicle Make/Model/Year (e.g., '2020 Honda Accord'), or null if not found";
+sem ExtractedFields.claimNumber = "Claim Number, or null if not found";
+
+"""Document type classification result"""
+obj DocumentType {
+    has category: str;
+    has confidence: float;
+}
+
+sem DocumentType.category = "One of: GAP_CONTRACT, INSURANCE_SETTLEMENT, PAYOFF_LETTER, PROOF_OF_LOSS, ODOMETER_STATEMENT, OTHER";
+sem DocumentType.confidence = "Confidence score between 0.0 and 1.0";
+
 # S3 Configuration
 glob S3_BUCKET = "gap-claim-intake-documents";
 glob S3_REGION = "us-east-2";
@@ -75,45 +107,35 @@ def extract_pdf_text_from_bytes(pdf_bytes: bytes) -> str {
     }
 }
 
-"""Analyze GAP claim document and extract key fields."""
-def analyze_claim_document(document_text: str, document_type: str = "unknown") -> str by llm(
-    method="Reason",
-    temperature=0.1,
-    incl_info=(
-        "You are a GAP insurance claim processing expert. Analyze the provided document text and extract key information.\n\n"
-        "Extract the following fields if present:\n"
-        "- Lienholder/Finance Company name\n"
-        "- Payoff Amount\n"
-        "- Settlement Amount (from insurance)\n"
-        "- VIN (Vehicle Identification Number)\n"
-        "- Policy Number\n"
-        "- Claimant Name\n"
-        "- Important Dates (claim date, incident date, etc.)\n"
-        "- Vehicle Make/Model/Year\n"
-        "- Claim Number\n\n"
-        f"Document Type: {document_type}\n"
-        f"Document Text:\n{document_text}\n\n"
-        "Return a JSON object with the extracted fields. Use null for fields not found.\n"
-        "Format: {\"lienholder\": \"...\", \"payoffAmount\": \"...\", \"settlementAmount\": \"...\", etc.}"
-    )
-);
+"""Analyze GAP claim document and extract key fields using structured output."""
+def analyze_claim_document(
+    document_text: str,
+    document_type: str
+) -> ExtractedFields by llm(method="Reason", temperature=0.0);
 
-"""Identify what type of document this is."""
-def classify_document(document_text: str) -> str by llm(
-    method="Reason",
-    temperature=0.1,
-    incl_info=(
-        "Classify this insurance/financial document into one of the following categories:\n"
-        "1. GAP_CONTRACT - GAP insurance contract or policy\n"
-        "2. INSURANCE_SETTLEMENT - Auto insurance settlement or payout letter\n"
-        "3. PAYOFF_LETTER - Vehicle loan payoff statement\n"
-        "4. PROOF_OF_LOSS - Proof of loss or total loss documentation\n"
-        "5. ODOMETER_STATEMENT - Odometer disclosure or reading document\n"
-        "6. OTHER - Other related document\n\n"
-        f"Document Text:\n{document_text}\n\n"
-        "Return only the category name (e.g., 'GAP_CONTRACT')."
-    )
-);
+sem analyze_claim_document = """
+You are a GAP insurance claim processing expert. Analyze the provided document text and extract key information.
+
+Extract all fields present in the document. Use null for fields not found in the document.
+For dates, return an array of date strings found in the document.
+
+Focus on precision and accuracy. If a field is ambiguous or unclear, return null rather than guessing.
+""";
+
+"""Identify what type of document this is using structured output."""
+def classify_document(document_text: str) -> DocumentType by llm(method="Reason", temperature=0.1);
+
+sem classify_document = """
+Classify this insurance/financial document into one of the following categories:
+- GAP_CONTRACT: GAP insurance contract or policy
+- INSURANCE_SETTLEMENT: Auto insurance settlement or payout letter
+- PAYOFF_LETTER: Vehicle loan payoff statement
+- PROOF_OF_LOSS: Proof of loss or total loss documentation
+- ODOMETER_STATEMENT: Odometer disclosure or reading document
+- OTHER: Other related document
+
+Provide a confidence score for your classification (0.0 to 1.0).
+""";
 
 """Determine what documents/information are missing for a complete claim."""
 def identify_missing_items(all_documents_json: str) -> list[str] by llm(

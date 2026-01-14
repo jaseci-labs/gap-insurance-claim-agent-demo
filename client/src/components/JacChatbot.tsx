@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from './Sidebar';
 import MobileMenuButton from './MobileMenuButton';
@@ -47,6 +47,16 @@ const JacChatbot = () => {
   const [claimSessionId, setClaimSessionId] = useState<string>('');
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [lastAssessment, setLastAssessment] = useState<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to latest message
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // Initialize session on component mount
   useEffect(() => {
@@ -261,18 +271,44 @@ Please provide a helpful response focused on updating the assessment or email, n
       await new Promise(resolve => setTimeout(resolve, 600));
 
       const processData = await processResponse.json();
+      console.log('Process response:', processData);
       
       if (processData.reports && processData.reports.length > 0) {
-        const result = processData.reports[0];
+        // Filter stage reports vs final assessment
+        const stageReports = processData.reports.filter((r: any) => r.stage);
+        const assessmentReport = processData.reports.find((r: any) => r.assessment);
         
-        if (result.assessment) {
+        console.log(`Processing ${processData.reports.length} reports - ${stageReports.length} stage reports, ${assessmentReport ? '1' : '0'} assessment`);
+        
+        // Remove document-upload message when we start showing stages
+        if (stageReports.length > 0) {
+          setMessages(prev => prev.filter(m => m.type !== 'document-upload'));
+        }
+        
+        // Add stage messages progressively
+        for (const stageReport of stageReports) {
+          const stageMessage: Message = {
+            id: `stage-${Date.now()}-${Math.random()}`,
+            content: `Processing: ${stageReport.stage}`,
+            isUser: false,
+            timestamp: new Date(),
+            type: 'processing-status',
+            data: stageReport
+          };
+          setMessages(prev => [...prev, stageMessage]);
+          scrollToBottom();
+          console.log(`Added stage message, total messages: ${messages.length + 1}`);
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+        
+        if (assessmentReport) {
           // Step 6: Generating report
           updateStatus('finalizing', 'Preparing your comprehensive assessment with recommendations...');
           setUploadingFiles(prev => prev.map(f => ({ ...f, progress: 90 })));
           await new Promise(resolve => setTimeout(resolve, 500));
           
           // Store assessment for context
-          setLastAssessment(result.assessment);
+          setLastAssessment(assessmentReport.assessment);
           
           // Update file status
           setUploadingFiles(prev => 
@@ -281,14 +317,14 @@ Please provide a helpful response focused on updating the assessment or email, n
           
           updateStatus('complete', 'All done! I have completed the analysis of your documents.');
           
-          // Add result message
+          // Add final assessment message
           const resultMessage: Message = {
             id: Date.now().toString(),
             content: 'Document analysis complete',
             isUser: false,
             timestamp: new Date(),
             type: 'document-result',
-            data: result.assessment
+            data: assessmentReport.assessment
           };
           setMessages(prev => [...prev, resultMessage]);
         }
@@ -317,7 +353,56 @@ Please provide a helpful response focused on updating the assessment or email, n
     }
   };
 
+  const getStageInfo = (stage: string) => {
+    const stages: Record<string, { icon: string; color: string; label: string }> = {
+      extract: { icon: '📄', color: 'text-blue-500', label: 'Extracting' },
+      identify: { icon: '🔍', color: 'text-orange-500', label: 'Identifying' },
+      assess: { icon: '📋', color: 'text-amber-500', label: 'Analyzing' },
+      draft: { icon: '✉️', color: 'text-purple-500', label: 'Drafting' },
+    };
+    return stages[stage] || { icon: '⚙️', color: 'text-gray-500', label: stage };
+  };
+
   const renderMessage = (message: Message) => {
+    if (message.type === 'processing-status') {
+      const stageData = message.data;
+      const stageInfo = getStageInfo(stageData.stage);
+      
+      return (
+        <div key={message.id} className="flex gap-3 p-3 animate-fade-in">
+          <div className="w-8 h-8 shrink-0 bg-muted/50 rounded-full flex items-center justify-center text-lg">
+            {stageInfo.icon}
+          </div>
+          <div className="flex-1">
+            <div className="rounded-2xl px-4 py-3 bg-card/80 border border-border/50 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`font-medium text-sm ${stageInfo.color}`}>
+                  {stageInfo.label}
+                </span>
+                <div className="flex gap-1">
+                  <div className={`w-1.5 h-1.5 rounded-full ${stageInfo.color} bg-current animate-pulse`}></div>
+                  <div className={`w-1.5 h-1.5 rounded-full ${stageInfo.color} bg-current animate-pulse`} style={{ animationDelay: '75ms' }}></div>
+                  <div className={`w-1.5 h-1.5 rounded-full ${stageInfo.color} bg-current animate-pulse`} style={{ animationDelay: '150ms' }}></div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {stageData.message || `Processing: ${stageData.stage}`}
+              </p>
+              {stageData.filename && (
+                <p className="text-xs text-muted-foreground/60 mt-1">
+                  {stageData.filename}
+                </p>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground/70 px-2 mt-1 flex items-center gap-1">
+              <div className="w-1 h-1 bg-muted-foreground/50 rounded-full"></div>
+              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (message.type === 'document-upload') {
       return (
         <Card key={message.id} className="p-4 border-primary/20 bg-primary/5">
@@ -457,10 +542,14 @@ Please provide a helpful response focused on updating the assessment or email, n
           <MobileMenuButton onClick={() => setSidebarOpen(true)} />
 
           {/* Header */}
-          <div className="hidden lg:flex items-center p-4 border-b border-border bg-card">
+          <div className="hidden lg:flex items-center justify-between p-4 border-b border-border bg-card">
             <div className="flex items-center gap-3">
               <img src={allyLogo} alt="Ally" className="w-8 h-8 object-contain" />
               <h1 className="text-xl font-semibold text-primary">Ally GAP Claims Agent</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Powered by</span>
+              <img src="/image.png" alt="Jaseci" className="h-6 object-contain" />
             </div>
           </div>
 
@@ -514,6 +603,8 @@ Please provide a helpful response focused on updating the assessment or email, n
               )}
               
               {messages.map((message) => renderMessage(message))}
+              
+              <div ref={messagesEndRef} />
               
               {isLoading && (
                 <div className="flex gap-3 p-3 animate-fade-in">
